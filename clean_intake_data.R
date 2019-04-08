@@ -25,8 +25,14 @@ intake$date <- gsub(' AM EST', '', x=intake$date)
 intake.ordered <- intake[order(as.Date(intake$date, format = "%Y-%m-%d h:m"), decreasing = TRUE)]
 
 # Find duplicated over first and last name
-intake$dup <- duplicated(intake[,3:4])
-dupes <- intake[duplicated(intake[,3:4])]
+intake.ordered$dup <- duplicated(intake.ordered[,3:4],fromLast = TRUE)
+dupes <- intake.ordered[duplicated(intake.ordered[,3:4],fromLast = TRUE)]
+
+
+
+
+
+
 
 
 
