@@ -21,8 +21,6 @@ intake$date <- gsub(' PM EST', '', x=intake$date)
 intake$date <- gsub(' AM EDT', '', x=intake$date)
 intake$date <- gsub(' AM EST', '', x=intake$date)
 
-
-
 # Order by date with newer on top
 intake.ordered <- intake[order(as.Date(intake$date, format = "%Y-%m-%d h:m"), decreasing = TRUE)]
 
@@ -35,4 +33,4 @@ dupes <- intake[duplicated(intake[,3:4])]
 
 
 # Plot in window
-plot(gvisTable(intake))
+plot(gvisTable(dupes))
