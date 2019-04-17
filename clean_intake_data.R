@@ -7,6 +7,7 @@ library(googlesheets)
 library(anytime)
 library(tidyr)
 library(stringr)
+library(FedData)
 
 ##### Input Data and Begin Clean #####
 intake <- read.csv('tables/Office_of_Returning_Citizens_Intake_Form_2019-02-06_145515_bec13ce6.csv') %>%
@@ -65,7 +66,9 @@ intake.true <- intake.ordered[ intake.ordered$dup == TRUE ]
 # Take out all dupes
 intake.deduped <- intake.ordered[ intake.ordered$dup == FALSE ]
 
-
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
 ##### Bad Fix Dates ##### 
 .comment <- function(){
 # String manipulation to clean up start dates
@@ -75,9 +78,7 @@ start.date <- gsub('  ', ' ', start.date)
 start.date <- gsub(' ', '-', start.date)
 
 # Write function to remove from the end of a string
-substrRight <- function(x, n){
-  substr(x, nchar(x)-n+1, nchar(x))
-}
+
 
 # Remove and replace '-' at the beginning and end of strings
 start.date <- ifelse(substr(start.date, 1, 1) == '-', sub("^.", "", start.date), start.date)
