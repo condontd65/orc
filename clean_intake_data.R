@@ -8,6 +8,7 @@ library(anytime)
 library(tidyr)
 library(stringr)
 library(FedData)
+library(xlsx)
 
 ##### Input Data and Begin Clean #####
 intake <- read.csv('tables/Office_of_Returning_Citizens_Intake_Form_2019-02-06_145515_bec13ce6.csv') %>%
@@ -37,6 +38,7 @@ intake.ordered <- intake[order(as.Date(intake$date, format = "%Y-%m-%d h:m"), de
 
 # Find duplicated over first and last name
 intake.ordered$dup <- duplicated(intake.ordered[,3:4],fromLast = TRUE)
+intake.ordered$dup_keep <- duplicated(intake.ordered[,3:4],fromLast = FALSE)
 dupes <- intake.ordered[duplicated(intake.ordered[,3:4],fromLast = TRUE)]
 
 # Verify google to keep track of duplicates
@@ -60,8 +62,28 @@ intake.ordered[487,42] <- TRUE
 intake.ordered[197,42] <- TRUE
 intake.ordered[221,42] <- TRUE
 
+intake.ordered[434,43] <- TRUE
+intake.ordered[555,43] <- TRUE
+intake.ordered[527,43] <- TRUE
+intake.ordered[533,43] <- TRUE
+intake.ordered[384,43] <- TRUE
+intake.ordered[524,43] <- TRUE
+intake.ordered[263,43] <- TRUE
+intake.ordered[458,43] <- TRUE
+intake.ordered[523,43] <- TRUE
+intake.ordered[537,43] <- TRUE
+intake.ordered[431,43] <- TRUE
+intake.ordered[508,43] <- TRUE
+intake.ordered[206,43] <- TRUE
+intake.ordered[230,43] <- TRUE
+
+# Make final table of duplicates
+dupes.final <- intake.ordered [ intake.ordered$dup == TRUE | intake.ordered$dup_keep == TRUE ]
+
+#intake.lastname <- intake.ordered[order(intake$Last.name., decreasing = FALSE)]
 # Subset to be sure
 intake.true <- intake.ordered[ intake.ordered$dup == TRUE ]
+
 
 # Take out all dupes
 intake.deduped <- intake.ordered[ intake.ordered$dup == FALSE ]
@@ -136,6 +158,10 @@ it$Start.date.of.your.most.recent.period.of.Incarceration. <- paste(it$start.mon
 it$Start.date.of.your.most.recent.period.of.Incarceration. <- ifelse(substr(it$Start.date.of.your.most.recent.period.of.Incarceration., 1, 1) == '-', 
                                                                      sub("^.", "", it$Start.date.of.your.most.recent.period.of.Incarceration.), 
                                                                      it$Start.date.of.your.most.recent.period.of.Incarceration.)
+
+it$Start.date.of.your.most.recent.period.of.Incarceration. <- ifelse(substr(it$Start.date.of.your.most.recent.period.of.Incarceration., 1, 1) == '-', 
+                                                                     sub("^.", "", it$Start.date.of.your.most.recent.period.of.Incarceration.), 
+                                                                     it$Start.date.of.your.most.recent.period.of.Incarceration.)
 # Remove ending "-"
 it$Start.date.of.your.most.recent.period.of.Incarceration. <- ifelse(substrRight(it$Start.date.of.your.most.recent.period.of.Incarceration., 1) == '-', 
                                                                      sub(".$", "", it$Start.date.of.your.most.recent.period.of.Incarceration.), 
@@ -179,6 +205,10 @@ it$End.date.of.your.most.recent.period.of.Incarceration. <- paste(it$end.month,
 it$End.date.of.your.most.recent.period.of.Incarceration. <- ifelse(substr(it$End.date.of.your.most.recent.period.of.Incarceration., 1, 1) == '-', 
                                                                      sub("^.", "", it$End.date.of.your.most.recent.period.of.Incarceration.), 
                                                                      it$End.date.of.your.most.recent.period.of.Incarceration.)
+
+it$End.date.of.your.most.recent.period.of.Incarceration. <- ifelse(substr(it$End.date.of.your.most.recent.period.of.Incarceration., 1, 1) == '-', 
+                                                                   sub("^.", "", it$End.date.of.your.most.recent.period.of.Incarceration.), 
+                                                                   it$End.date.of.your.most.recent.period.of.Incarceration.)
 # Remove ending "-"
 it$End.date.of.your.most.recent.period.of.Incarceration. <- ifelse(substrRight(it$End.date.of.your.most.recent.period.of.Incarceration., 1) == '-', 
                                                                      sub(".$", "", it$End.date.of.your.most.recent.period.of.Incarceration.), 
@@ -219,7 +249,7 @@ it$Date.completed. <- paste(it$month,
                             it$year,
                             sep = "-")
 
-# Remove Ending "-"                                                                                                                                                    sep = "-")
+# Remove Ending "-"
 it$Date.completed. <- ifelse(substr(it$Date.completed., 1, 1) == '-', 
                                                                    sub("^.", "", it$Date.completed.), 
                                                                    it$Date.completed.)
@@ -235,52 +265,88 @@ it$Date.completed. <- ifelse(substrRight(it$Date.completed., 1) == '-',
 it$Date.completed. <- ifelse(substrRight(it$Date.completed., 1) == '-', 
                                                                    sub(".$", "", it$Date.completed.), 
                                                                    it$Date.completed.)
+
+it$Date.completed. <- gsub('--','-',it$Start.date.of.your.most.recent.period.of.Incarceration.)
+it$Date.completed. <- gsub('--','-',it$End.date.of.your.most.recent.period.of.Incarceration.)
 it$Date.completed. <- gsub('--','-',it$Date.completed.)
 
 
-
+##### Other Data Manipulation #####
 # Drop dataframe columns that are unecessary
+#drops <- c('start.year','start.month','start.day','end.year','end.month','end.day','month','day','year')
+
+it <- it[, !c('start.year','start.month','start.day','end.year','end.month','end.day','month','day','year')]
+
+column.order <- colnames(intake.deduped)
+
+# Organize table in same way as original input
+it <- it [ , c('Reference.ID', 'Submission.Created', 'First.name.',
+         'Last.name.', 'Phone.Number.', 'Email.', 'Street.address.',
+         'City.', 'State.', 'Zip.', 'Highest.level.of.education.completed.',
+         'Year.completed.', 'Have.you.served.in.the.U.S..military.',
+         'Marital.status.', 'Do.you.have.children.', 'How.many.children.do.you.have.',
+         'Please.select.the.age.range.s..of.your.children...Select.all.that.apply..',
+         'Are.you.receiving.SNAP.benefits.', 'Are.you.getting.any.cash.benefits.',
+         'What.level.was.your.incarceration.', 'What.state.were.you.incarcerated.in.',
+         'Start.date.of.your.most.recent.period.of.Incarceration.',
+         'End.date.of.your.most.recent.period.of.Incarceration.', 
+         'Are.you.receiving.case.management.services.', 'Intake.coordinator.',
+         'Where.are.you.receiving.case.management.services.', 'Case.manager.s.name.',
+         'Case.manager.s.phone.number.', 'Are.you.currently.under.supervision.',
+         'Name.of.CSO.', 'What.services.can.we.help.you.with...Select.all.that.apply..',
+         'What.is.your.date.of.birth.', 'Do.you.identify.as.Hispanic.or.Latino.',
+         'How.do.you.identify.your.race..Check.all.that.apply.',
+         'What.is.your.gender.identity.', 'Halfway.house', 'Date.completed.',
+         'Have.you.served.in.the.U.S..military..1', 'What.is.your.age.range.',
+         'Prison...Jail.ID.Number.') ]
+
+# Write function to fix capitalization of certain fields
+simpleCap <- function(x) {
+  s <- strsplit(x,' ')[[1]]
+  paste(toupper(substring(s, 1, 1)), substring(s, 2),
+        sep = '', collapse = ' ')
+}
+
+city <- it$City.
+it$City. <- lapply(as.character(it$City.), simpleCap)
+
+dupes.final$Last.name. <- lapply(as.character(dupes.final$Last.name.), simpleCap)
+dupes.final$Last.name. <- as.character(dupes.final$Last.name.)
+dupes.final.ord <- dupes.final[order(dupes.final$Last.name., decreasing = FALSE)]
+dupes.final.ord$keep <- dupes.final.ord$dup_keep
+dupes.final.ord <- dupes.final.ord[, !c('dup','dup_keep')]
 
 
+# Fix column names
+colnames(it) <- c('Reference ID', 'Submission Created', 'First name:', 'Last name:', 'Phone Number:',
+                  'Email:', 'Street address:', 'City:', 'State:', 'Zip:', 'Highest level of education completed:',
+                  'Year completed:', 'Have you served in the U.S. military?', 'Marital status:',
+                  'Do you have children?', 'How many children do you have?',
+                  'Please select the age range(s) of your children. (Select all that apply.)',
+                  'Are you receiving SNAP benefits?', 'Are you getting any cash benefits?', 
+                  'What level was your incarceration?', 'What state were you incarcerated in?',
+                  'Start date of your most recent period of Incarceration:', 
+                  'End date of your most recent period of Incarceration:', 'Are you receiving case management services?',
+                  'Intake coordinator:', 'Where are you receiving case management services?', "Case manager's name:",
+                  "Case manager's phone number:", 'Are you currently under supervision?', 'Name of CSO:',
+                  'What services can we help you with? (Select all that apply.)','What is your date of birth?',
+                  'Do you identify as Hispanic or Latino?', 'How do you identify your race? Check all that apply.',
+                  'What is your gender identity?', 'Halfway house', 'Date completed:', 'Have you served in the U.S. military?',
+                  'What is your age range?', 'Prison / Jail ID Number:')
 
+# Convert zip to a character
+it$`Zip:` <- as.character(it$`Zip:`)
+it$`City:` <- as.character(it$`City:`)
 
+# Remove NA for export and just give null value
+it [ is.na(it) ] <- ''
 
+# Write to csv
+write.csv(it, 'ORC_Intake_cleaned.csv', row.names = FALSE)
+write.xlsx(it, 'ORC_Intake_cleaned.xlsx', row.names = FALSE)
 
-
-
-
-#it$Start.date.of.your.most.recent.period.of.Incarceration. <- ifelse(nchar(it$Start.date.of.your.most.recent.period.of.Incarceration.) == 10, 
-#                       as.Date(it$Start.date.of.your.most.recent.period.of.Incarceration., format = "%Y-%m-%d"),
-#                       it$Start.date.of.your.most.recent.period.of.Incarceration.)
-
-
- 
-
-#  
-intake.deduped$End.date.of.your.most.recent.period.of.Incarceration.
-
-
-
-
-
-
-
-
-
-
-
-# Plot in window
-plot(gvisTable(dupes))
-
-
-
-
-
-
-
-
-
-
+dupes.final.ord [ is.na(dupes.final.ord) ] <- ''
+write.xlsx(dupes.final.ord, 'ORC_Intake_duplicates.xlsx', row.names = FALSE)
 
 
 
@@ -291,6 +357,7 @@ plot(gvisTable(dupes))
 
 
 # Random prk stuff
+prk.function <- function (x) {
 old.count <- 12302
 new.count <- 19659
 dif <- new.count - old.count
@@ -301,7 +368,7 @@ dif <- new.area - old.area
 dif.miles <- dif / 27880000
 
 rm(old.count,new.count,dif,old.area,new.area,dif.miles)
-
+}
 
 
 
