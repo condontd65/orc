@@ -6,7 +6,6 @@ library(dplyr)
 library(googlesheets)
 library(anytime)
 library(tidyr)
-library(stringr)
 library(FedData)
 library(xlsx)
 
